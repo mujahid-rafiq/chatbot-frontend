@@ -1,8 +1,9 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Message } from '@/types/chat';
-import { useState } from 'react';
 import { CopyIcon } from '@/assets/svg';
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+
 
 interface MessageBubbleProps {
     message: Message;
@@ -10,18 +11,10 @@ interface MessageBubbleProps {
 
 export default function MessageBubble({ message }: MessageBubbleProps) {
     const isUser = message.role === 'user';
-    const [isCopied, setIsCopied] = useState(false);
+    const [isCopied, copy] = useCopyToClipboard();
 
-    // Helper function to copy message content to clipboard
-    const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(message.content);
-            setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
-        } catch {
-            console.error('Failed to copy text');
-        }
-    };
+    const handleCopy = () => copy(message.content);
+
 
     return (
         <div className={`flex items-end gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
