@@ -1,7 +1,11 @@
 'use client';
 
-import { useState, KeyboardEvent, useRef, useEffect } from 'react';
+import { useState } from 'react';
+
 import { SendIcon } from '@/assets/svg';
+import { useAutoResizeTextArea } from '@/hooks/useAutoResizeTextArea';
+import { handleEnterSubmit } from '@/utils/keyboardHelper';
+
 
 interface MessageInputProps {
     onSend: (message: string) => void;
@@ -10,14 +14,7 @@ interface MessageInputProps {
 
 export default function MessageInput({ onSend, disabled }: MessageInputProps) {
     const [input, setInput] = useState('');
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-        }
-    }, [input]);
+    const textareaRef = useAutoResizeTextArea(input);
 
     const handleSend = () => {
         const trimmed = input.trim();
@@ -26,12 +23,6 @@ export default function MessageInput({ onSend, disabled }: MessageInputProps) {
         setInput('');
     };
 
-    const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    };
 
     return (
         <div className="px-4 py-2 sm:py-6">
@@ -40,7 +31,8 @@ export default function MessageInput({ onSend, disabled }: MessageInputProps) {
                     ref={textareaRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
+                    onKeyDown={(e) => handleEnterSubmit(e, handleSend)}
+
                     disabled={disabled}
                     rows={1}
                     placeholder={disabled ? 'AI is thinking...' : 'Type a message...'}
