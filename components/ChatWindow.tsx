@@ -8,18 +8,13 @@ import { TrashIcon, XIcon } from '@/assets/svg';
 import useGetChatHistory from '@/react-query-hooks/chat/useGetChatHistory';
 import usePostSendMessage from '@/react-query-hooks/chat/usePostSendMessage';
 import useDeleteClearHistory from '@/react-query-hooks/chat/useDeleteClearHistory';
+import { useSessionId } from '@/hooks/useSessionId';
+import { getErrorMessage } from '@/utils/errorHelper';
+
+
 
 export default function ChatWindow() {
-    // A unique session ID for this browser — persisted in localStorage
-    const [sessionId, setSessionId] = useState<string>(() => {
-        if (typeof window === 'undefined') return 'default-session';
-        const stored = localStorage.getItem('chatSessionId');
-        if (stored) return stored;
-        const newId = `session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        localStorage.setItem('chatSessionId', newId);
-        return newId;
-    });
-
+    const { sessionId, setSessionId, refreshSessionId } = useSessionId();
     const bottomRef = useRef<HTMLDivElement>(null);
 
     // React Query Hooks
@@ -40,11 +35,9 @@ export default function ChatWindow() {
         setError(null);
 
         sendMessageMutation.mutate({ message: userText, sessionId }, {
-            onError: (err: any) => {
-                const message = err.response?.data?.message || err.message || 'Something went wrong. Please try again.';
-                setError(message);
-            }
+            onError: (err) => setError(getErrorMessage(err))
         });
+
     }
 
     // Clear current history
@@ -53,18 +46,16 @@ export default function ChatWindow() {
         if (!confirm('Are you sure you want to clear this entire conversation history? This cannot be undone.')) return;
 
         clearHistoryMutation.mutate(sessionId, {
-            onError: () => {
-                setError('Could not clear history on server.');
-            }
+            onError: (err) => setError(getErrorMessage(err, 'Could not clear history on server.'))
         });
+
     }
 
     // Generate a fresh session ID
     function handleNewChat() {
-        const newId = `session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        localStorage.setItem('chatSessionId', newId);
-        setSessionId(newId);
+        refreshSessionId();
     }
+
 
     return (
         <div className="flex flex-col h-screen bg-gray-950 text-white selection:bg-violet-500/30">
